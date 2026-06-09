@@ -17,6 +17,18 @@
   // which lineages exist per disease (for dropdowns)
   var linByDisease = {}; DO.forEach(function (c) { linByDisease[c] = {}; });
   deg.forEach(function (rw) { linByDisease[DO[rw[1]]][rw[2]] = true; });
+  var labelByCode = {}; L.forEach(function (l) { labelByCode[l.code] = l.label; });
+
+  // ---- expression matrix (absolute view) + full gene list -------------------
+  var EXPR = window.NV_EXPR || null;
+  var exprIdx = {};
+  var allGenes = NV.genes.slice();
+  if (EXPR) {
+    DO.forEach(function (c) { exprIdx[c] = {}; var ed = EXPR[c]; if (ed) ed.genes.forEach(function (g, i) { exprIdx[c][g] = i; }); });
+    var seenG = {}; allGenes.forEach(function (g) { seenG[g] = 1; });
+    (EXPR.allGenes || []).forEach(function (g) { if (!seenG[g]) { seenG[g] = 1; allGenes.push(g); } });
+    allGenes.sort();
+  }
 
   var $ = function (id) { return document.getElementById(id); };
   function el(tag, cls, html) { var e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
@@ -86,13 +98,13 @@
   function searchGenes(q) {
     q = q.toUpperCase();
     var starts = [], incl = [];
-    for (var i = 0; i < NV.genes.length && starts.length < 12; i++) {
-      var g = NV.genes[i];
+    for (var i = 0; i < allGenes.length && starts.length < 12; i++) {
+      var g = allGenes[i];
       if (g.toUpperCase().indexOf(q) === 0) starts.push(g);
     }
     if (starts.length < 12) {
-      for (var j = 0; j < NV.genes.length && incl.length < 12 - starts.length; j++) {
-        var gg = NV.genes[j];
+      for (var j = 0; j < allGenes.length && incl.length < 12 - starts.length; j++) {
+        var gg = allGenes[j];
         if (gg.toUpperCase().indexOf(q) > 0) incl.push(gg);
       }
     }
@@ -106,8 +118,8 @@
     ac.innerHTML = "";
     acItems.forEach(function (g, idx) {
       var d = el("div");
-      var n = geneIndex[g] ? geneIndex[g].length : 0;
-      d.innerHTML = '<span class="g">' + g + '</span> <span class="muted" style="font-size:12px">' + n + ' cell-type · disease tests</span>';
+      var tag = geneIndex[g] ? (geneIndex[g].length + ' DE tests') : 'expression';
+      d.innerHTML = '<span class="g">' + g + '</span> <span class="muted" style="font-size:12px">' + tag + '</span>';
       d.onclick = function () { pick(g); };
       ac.appendChild(d);
     });
@@ -125,12 +137,26 @@
   });
   document.addEventListener("click", function (e) { if (!ac.contains(e.target) && e.target !== input) ac.style.display = "none"; });
 
-  function renderGene(gene) {
+  var curGene = null, searchView = "diff";
+  function renderGene(gene) { curGene = gene; renderView(); }
+  function renderView() { if (!curGene) return; (searchView === "abs" ? renderAbs : renderDiff)(curGene); }
+  function setView(v) {
+    searchView = v;
+    $("search-view").querySelectorAll("button").forEach(function (b) { b.classList.toggle("active", b.dataset.v === v); });
+    renderView();
+  }
+  function initSearchView() {
+    $("search-view").querySelectorAll("button").forEach(function (btn) { btn.onclick = function () { setView(btn.dataset.v); }; });
+  }
+
+  function renderDiff(gene) {
     var rows = geneIndex[gene];
     var box = $("result");
     box.style.display = "block";
     if (!rows || !rows.length) {
-      box.innerHTML = '<div class="empty">No differential-expression record for <b>' + gene + '</b>.</div>';
+      box.innerHTML = '<div class="rh"><h3>' + gene + '</h3><span class="meta">not a significant DEG in any cell type</span></div>' +
+        '<div class="empty">No significant disease-vs-control change for <b>' + gene + '</b>. Switch to <b class="goabs" style="cursor:pointer;color:#1565c0">Absolute expression</b> to see its levels per cell type.</div>';
+      var ga = box.querySelector(".goabs"); if (ga) ga.onclick = function () { setView("abs"); };
       return;
     }
     // lineages present (in canonical order), and lookup by (disease,lineage)
@@ -176,6 +202,54 @@
         '<td>' + fmtQ(rw[6]) + '</td></tr>';
     });
     html += '</tbody></table>';
+    box.innerHTML = html;
+  }
+
+  // ---- absolute expression view ---------------------------------------------
+  var BLUES = [[0, [247, 247, 247]], [0.25, [198, 219, 239]], [0.6, [66, 146, 198]], [1, [8, 48, 107]]];
+  function exprColor(v, max) { if (v == null) return [245, 245, 245]; return rampColor(BLUES, max > 0 ? Math.min(v / max, 1) : 0); }
+  function exprVal(d, gene, linCode, cond) {
+    var ed = EXPR && EXPR[d]; if (!ed) return null;
+    var gi = exprIdx[d][gene]; if (gi == null) return null;
+    var j = ed.lin.indexOf(linCode); if (j < 0) return null;
+    return (cond === "C" ? ed.avgC : ed.avgD)[gi * ed.lin.length + j] / 100;
+  }
+  function renderAbs(gene) {
+    var box = $("result"); box.style.display = "block";
+    var head = '<div class="rh"><h3>' + gene + '</h3>';
+    if (!EXPR) { box.innerHTML = head + '</div><div class="empty">Expression data not loaded.</div>'; return; }
+    var present = {};
+    DO.forEach(function (d) { var ed = EXPR[d]; if (ed && exprIdx[d][gene] != null) ed.lin.forEach(function (Lc) { present[Lc] = true; }); });
+    var linCodes = L.map(function (l) { return l.code; }).filter(function (c) { return present[c]; });
+    if (!linCodes.length) {
+      box.innerHTML = head + '<span class="meta">below detection floor</span></div>' +
+        '<div class="empty">No expression record for <b>' + gene + '</b> in these datasets (very low or undetected).</div>';
+      return;
+    }
+    var gmax = 0;
+    linCodes.forEach(function (Lc) { DO.forEach(function (d) { ["C", "D"].forEach(function (cc) { var v = exprVal(d, gene, Lc, cc); if (v != null && v > gmax) gmax = v; }); }); });
+    var html = head + '<span class="meta">mean log-normalised expression · colour scaled to this gene\'s max (' + gmax.toFixed(2) + ') · <a href="https://www.genecards.org/cgi-bin/carddisp.pl?gene=' + encodeURIComponent(gene) + '" target="_blank" rel="noopener">GeneCards ↗</a></span></div>';
+    html += '<div class="hm"><table class="heat"><thead><tr><th class="row">Cell type</th>';
+    DO.forEach(function (d) { html += '<th colspan="2" style="border-bottom:2px solid ' + colorByCode[d] + '"><span style="color:' + colorByCode[d] + '">●</span> ' + dispByCode[d].short + '</th>'; });
+    html += '</tr><tr><th class="row"></th>';
+    DO.forEach(function () { html += '<th style="font-weight:500;color:#999;font-size:10.5px">Ctrl</th><th style="font-weight:500;color:#999;font-size:10.5px">Dis</th>'; });
+    html += '</tr></thead><tbody>';
+    linCodes.forEach(function (Lc) {
+      html += '<tr><td class="lbl">' + labelByCode[Lc] + '</td>';
+      DO.forEach(function (d) {
+        ["C", "D"].forEach(function (cc) {
+          var v = exprVal(d, gene, Lc, cc);
+          if (v == null) { html += '<td class="cell na">·</td>'; return; }
+          var col = exprColor(v, gmax);
+          html += '<td class="cell" style="background:' + rgb(col) + ';color:' + textOn(col) +
+            '" title="' + dispByCode[d].short + ' · ' + labelByCode[Lc] + ' · ' + (cc === "C" ? "Control" : "Disease") + '\nmean expr ' + v.toFixed(2) + '">' + v.toFixed(1) + '</td>';
+        });
+      });
+      html += '</tr>';
+    });
+    html += '</tbody></table></div>';
+    html += '<div class="hm-legend"><div class="scalebar"><span>0</span><span class="bar" style="background:linear-gradient(90deg,#f7f7f7,#c6dbef,#4292c6,#08306b)"></span><span>' + gmax.toFixed(1) + '</span></div>' +
+      '<div class="lg-item">Mean log-normalised expression, control vs disease per cell type</div></div>';
     box.innerHTML = html;
   }
 
@@ -499,6 +573,7 @@
   initPathways();
   initLR();
   initAtlas();
+  initSearchView();
   initNav();
   renderGene("ADAMTS9"); // a convergent, vascular headline gene
 })();

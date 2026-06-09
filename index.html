@@ -210,12 +210,20 @@
 <section id="search">
   <div class="container">
     <h2>Gene search</h2>
-    <p class="sec-desc">Search any gene to see its disease-versus-control change in every cell type, side by side across the three diseases. Cells are coloured by log<sub>2</sub> fold-change; a dark outline marks significant change (FDR &le; 0.05).</p>
+    <p class="sec-desc">Search any detected gene (not only DEGs). <b>Disease difference</b> shows the disease-versus-control log<sub>2</sub> fold-change per cell type (dark outline = FDR &le; 0.05). <b>Absolute expression</b> shows mean expression in control and disease side by side, useful for confirming cell-type markers.</p>
     <div class="search-wrap">
-      <input type="text" id="geneInput" placeholder="Gene symbol, e.g. ADAMTS9, COL4A1, CLDN5" autocomplete="off">
+      <input type="text" id="geneInput" placeholder="Gene symbol, e.g. CLDN5, PDGFRB, ADAMTS9" autocomplete="off">
       <div class="ac" id="ac"></div>
     </div>
-    <div class="hint">Try: <b>ADAMTS9</b>, <b>COL4A1</b>, <b>COL4A2</b>, <b>CLDN5</b>, <b>PDGFRB</b>, <b>VEGFC</b>, <b>APOE</b>, <b>SLC6A1</b>, <b>NAMPT</b>, <b>CNTNAP4</b></div>
+    <div class="hint">DEGs: <b>ADAMTS9</b>, <b>COL4A1</b>, <b>VEGFC</b>, <b>NAMPT</b> &nbsp;·&nbsp; markers: <b>CLDN5</b>, <b>PDGFRB</b>, <b>RGS5</b>, <b>AQP4</b>, <b>P2RY12</b>, <b>PLP1</b></div>
+    <div class="controls" style="margin-top:14px">
+      <div class="ctl-group"><label>View</label>
+        <div class="seg" id="search-view">
+          <button data-v="diff" class="active">Disease difference</button>
+          <button data-v="abs">Absolute expression</button>
+        </div>
+      </div>
+    </div>
     <div class="result" id="result"></div>
   </div>
 </section>
@@ -344,6 +352,7 @@
 
 <script src="data.js"></script>
 <script src="umap.js"></script>
+<script src="expr.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
