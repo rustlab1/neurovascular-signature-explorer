@@ -137,16 +137,23 @@
   });
   document.addEventListener("click", function (e) { if (!ac.contains(e.target) && e.target !== input) ac.style.display = "none"; });
 
-  var curGene = null, searchView = "diff";
+  var curGene = null, searchView = "abs", absScale = "scaled";
   function renderGene(gene) { curGene = gene; renderView(); }
   function renderView() { if (!curGene) return; (searchView === "abs" ? renderAbs : renderDiff)(curGene); }
   function setView(v) {
     searchView = v;
     $("search-view").querySelectorAll("button").forEach(function (b) { b.classList.toggle("active", b.dataset.v === v); });
+    $("scale-group").style.display = (v === "abs") ? "" : "none";
+    renderView();
+  }
+  function setScale(s) {
+    absScale = s;
+    $("abs-scale").querySelectorAll("button").forEach(function (b) { b.classList.toggle("active", b.dataset.s === s); });
     renderView();
   }
   function initSearchView() {
     $("search-view").querySelectorAll("button").forEach(function (btn) { btn.onclick = function () { setView(btn.dataset.v); }; });
+    $("abs-scale").querySelectorAll("button").forEach(function (btn) { btn.onclick = function () { setScale(btn.dataset.s); }; });
   }
 
   function renderDiff(gene) {
@@ -228,7 +235,11 @@
     }
     var gmax = 0;
     linCodes.forEach(function (Lc) { DO.forEach(function (d) { ["C", "D"].forEach(function (cc) { var v = exprVal(d, gene, Lc, cc); if (v != null && v > gmax) gmax = v; }); }); });
-    var html = head + '<span class="meta">mean log-normalised expression · colour scaled to this gene\'s max (' + gmax.toFixed(2) + ') · <a href="https://www.genecards.org/cgi-bin/carddisp.pl?gene=' + encodeURIComponent(gene) + '" target="_blank" rel="noopener">GeneCards ↗</a></span></div>';
+    var scaled = (absScale === "scaled");
+    var meta = scaled
+      ? 'scaled to this gene\'s peak across all three diseases (0–100%), so AD / HD / FTD are comparable'
+      : 'mean log-normalised expression (CP10k log1p)';
+    var html = head + '<span class="meta">' + meta + ' · <a href="https://www.genecards.org/cgi-bin/carddisp.pl?gene=' + encodeURIComponent(gene) + '" target="_blank" rel="noopener">GeneCards ↗</a></span></div>';
     html += '<div class="hm"><table class="heat"><thead><tr><th class="row">Cell type</th>';
     DO.forEach(function (d) { html += '<th colspan="2" style="border-bottom:2px solid ' + colorByCode[d] + '"><span style="color:' + colorByCode[d] + '">●</span> ' + dispByCode[d].short + '</th>'; });
     html += '</tr><tr><th class="row"></th>';
@@ -240,16 +251,19 @@
         ["C", "D"].forEach(function (cc) {
           var v = exprVal(d, gene, Lc, cc);
           if (v == null) { html += '<td class="cell na">·</td>'; return; }
+          var frac = gmax > 0 ? Math.min(v / gmax, 1) : 0;
           var col = exprColor(v, gmax);
+          var label = scaled ? Math.round(frac * 100) : v.toFixed(1);
           html += '<td class="cell" style="background:' + rgb(col) + ';color:' + textOn(col) +
-            '" title="' + dispByCode[d].short + ' · ' + labelByCode[Lc] + ' · ' + (cc === "C" ? "Control" : "Disease") + '\nmean expr ' + v.toFixed(2) + '">' + v.toFixed(1) + '</td>';
+            '" title="' + dispByCode[d].short + ' · ' + labelByCode[Lc] + ' · ' + (cc === "C" ? "Control" : "Disease") +
+            '\nmean expr ' + v.toFixed(2) + ' (' + Math.round(frac * 100) + '% of peak)">' + label + '</td>';
         });
       });
       html += '</tr>';
     });
     html += '</tbody></table></div>';
-    html += '<div class="hm-legend"><div class="scalebar"><span>0</span><span class="bar" style="background:linear-gradient(90deg,#f7f7f7,#c6dbef,#4292c6,#08306b)"></span><span>' + gmax.toFixed(1) + '</span></div>' +
-      '<div class="lg-item">Mean log-normalised expression, control vs disease per cell type</div></div>';
+    html += '<div class="hm-legend"><div class="scalebar"><span>0</span><span class="bar" style="background:linear-gradient(90deg,#f7f7f7,#c6dbef,#4292c6,#08306b)"></span><span>' + (scaled ? '100%' : gmax.toFixed(1)) + '</span></div>' +
+      '<div class="lg-item">' + (scaled ? "% of this gene's peak, pooled across AD / HD / FTD" : "mean log-normalised expression, control vs disease") + '</div></div>';
     box.innerHTML = html;
   }
 

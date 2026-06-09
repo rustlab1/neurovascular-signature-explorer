@@ -210,7 +210,7 @@
 <section id="search">
   <div class="container">
     <h2>Gene search</h2>
-    <p class="sec-desc">Search any detected gene (not only DEGs). <b>Disease difference</b> shows the disease-versus-control log<sub>2</sub> fold-change per cell type (dark outline = FDR &le; 0.05). <b>Absolute expression</b> shows mean expression in control and disease side by side, useful for confirming cell-type markers.</p>
+    <p class="sec-desc">Search any detected gene (not only DEGs). <b>Absolute expression</b> (default) shows mean expression in control and disease per cell type, scaled to each gene's peak across the three diseases so AD / HD / FTD are comparable, useful for confirming markers. <b>Disease difference</b> shows the disease-versus-control log<sub>2</sub> fold-change (dark outline = FDR &le; 0.05).</p>
     <div class="search-wrap">
       <input type="text" id="geneInput" placeholder="Gene symbol, e.g. CLDN5, PDGFRB, ADAMTS9" autocomplete="off">
       <div class="ac" id="ac"></div>
@@ -219,8 +219,14 @@
     <div class="controls" style="margin-top:14px">
       <div class="ctl-group"><label>View</label>
         <div class="seg" id="search-view">
-          <button data-v="diff" class="active">Disease difference</button>
-          <button data-v="abs">Absolute expression</button>
+          <button data-v="abs" class="active">Absolute expression</button>
+          <button data-v="diff">Disease difference</button>
+        </div>
+      </div>
+      <div class="ctl-group" id="scale-group"><label>Scale</label>
+        <div class="seg" id="abs-scale">
+          <button data-s="scaled" class="active">Scaled %</button>
+          <button data-s="raw">Mean expr</button>
         </div>
       </div>
     </div>
