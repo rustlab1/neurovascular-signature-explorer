@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Neurovascular Molecular Signatures in Neurodegeneration</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 14px; color: #1a1a1a;
+    background: #fafafa; margin: 0; line-height: 1.5;
+  }
+  .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+  a { color: #1565c0; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* header */
+  header { background: #fff; border-bottom: 1px solid #e0e0e0; padding: 38px 0 26px; }
+  h1 { font-size: 27px; font-weight: 600; line-height: 1.22; margin: 0 0 6px; }
+  .subtitle { font-size: 15px; color: #666; margin: 0 0 18px; }
+  .badges { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 16px; }
+  .badge { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 20px; }
+  .badge .dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px; vertical-align: middle; }
+  .summary { background: #f8f8f8; border-left: 3px solid #8b949e; border-radius: 0 8px 8px 0;
+    padding: 14px 18px; color: #444; font-size: 13.5px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+  .summary b { color: #1a1a1a; }
+  .stats { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 18px; }
+  .stat-card { background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 12px 18px; min-width: 120px; }
+  .stat-card .num { font-size: 25px; font-weight: 700; }
+  .stat-card .lbl { font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: .5px; }
+
+  /* nav */
+  nav { position: sticky; top: 0; z-index: 30; background: rgba(255,255,255,.96);
+    backdrop-filter: saturate(180%) blur(6px); border-bottom: 1px solid #e0e0e0; }
+  nav .container { display: flex; gap: 4px; overflow-x: auto; }
+  nav a { color: #666; font-size: 13px; font-weight: 500; padding: 13px 13px; border-bottom: 2px solid transparent; white-space: nowrap; }
+  nav a:hover { color: #1a1a1a; text-decoration: none; }
+  nav a.active { color: #1a1a1a; border-bottom-color: #1a1a1a; }
+
+  section { padding: 38px 0; border-bottom: 1px solid #eee; }
+  h2 { font-size: 20px; font-weight: 600; margin: 0 0 4px; }
+  .sec-desc { color: #666; font-size: 13.5px; margin: 0 0 22px; max-width: 760px; }
+
+  /* controls */
+  .controls { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; margin-bottom: 18px; }
+  .ctl-group { display: flex; flex-direction: column; gap: 4px; }
+  .ctl-group label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: .5px; }
+  select, .toggle-btn, input[type=text] {
+    font-family: inherit; font-size: 13px; border: 1px solid #d5d5d5; border-radius: 6px;
+    padding: 7px 10px; background: #fff; color: #1a1a1a; }
+  select:focus, input[type=text]:focus { outline: none; border-color: #1565c0; }
+  .seg { display: inline-flex; border: 1px solid #d5d5d5; border-radius: 6px; overflow: hidden; }
+  .seg button { border: none; background: #fff; padding: 7px 13px; font-size: 13px; cursor: pointer; color: #555; border-right: 1px solid #eee; }
+  .seg button:last-child { border-right: none; }
+  .seg button.active { background: #1a1a1a; color: #fff; }
+
+  /* search */
+  .search-wrap { position: relative; max-width: 440px; }
+  #geneInput { width: 100%; font-size: 15px; padding: 11px 13px; }
+  .hint { font-size: 12px; color: #999; margin-top: 7px; }
+  .hint b { color:#666; cursor: pointer; font-weight: 600; }
+  .hint b:hover { color:#1565c0; }
+  .ac { position: absolute; left: 0; right: 0; top: 48px; background: #fff; border: 1px solid #e0e0e0;
+    border-radius: 8px; box-shadow: 0 6px 20px rgba(0,0,0,.10); max-height: 280px; overflow-y: auto; display: none; }
+  .ac div { padding: 9px 13px; cursor: pointer; border-bottom: 1px solid #f3f3f3; font-size: 13.5px; }
+  .ac div:hover, .ac div.sel { background: #f5f7fb; }
+  .ac .g { font-weight: 600; }
+
+  /* gene result */
+  .result { background:#fff; border:1px solid #e0e0e0; border-radius:10px; padding:22px; margin-top:6px; display:none; }
+  .result .rh { display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:4px; }
+  .result .rh h3 { font-size:22px; margin:0; font-weight:700; }
+  .result .rh .meta { font-size:12.5px; color:#888; }
+
+  /* heatmap */
+  .hm { margin-top: 16px; overflow-x:auto; }
+  table.heat { border-collapse: collapse; font-size: 12.5px; }
+  table.heat th { font-weight:600; color:#555; padding:6px 8px; text-align:center; font-size:11.5px; }
+  table.heat th.row { text-align:left; min-width:150px; }
+  table.heat td.lbl { text-align:left; padding:5px 8px; color:#333; white-space:nowrap; }
+  table.heat td.lbl .grp { color:#aaa; font-size:10.5px; text-transform:uppercase; letter-spacing:.4px; }
+  table.heat td.cell { width:78px; height:34px; text-align:center; border:2px solid #fff; border-radius:4px;
+    font-variant-numeric: tabular-nums; cursor: default; position: relative; }
+  table.heat td.cell.sig { box-shadow: inset 0 0 0 2px #1a1a1a; }
+  table.heat td.cell.na { color:#bbb; background:#f5f5f5; }
+  .hm-legend { display:flex; align-items:center; gap:16px; flex-wrap:wrap; margin-top:14px; font-size:12px; color:#666; }
+  .scalebar { display:flex; align-items:center; gap:8px; }
+  .scalebar .bar { width:170px; height:12px; border-radius:3px;
+    background: linear-gradient(90deg,#024c33,#059669,#d9f0e4,#f5f5f5,#fde9d0,#d97706,#7a3d00); border:1px solid #e0e0e0; }
+  .lg-item { display:flex; align-items:center; gap:6px; }
+  .lg-sw { width:13px; height:13px; border-radius:3px; display:inline-block; }
+
+  /* detail table */
+  table.dt { border-collapse: collapse; width: 100%; font-size: 13px; margin-top: 18px; }
+  table.dt th { text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:#888;
+    border-bottom:1px solid #e0e0e0; padding:8px 10px; }
+  table.dt td { padding:7px 10px; border-bottom:1px solid #f2f2f2; font-variant-numeric: tabular-nums; }
+  .fc-pos { color:#d97706; font-weight:600; }
+  .fc-neg { color:#059669; font-weight:600; }
+  .muted { color:#aaa; }
+
+  /* DEP lists */
+  .grid2 { display:grid; grid-template-columns:1fr; gap:8px; }
+  .dep-item { display:grid; grid-template-columns:34px 110px 1fr 70px 78px; align-items:center; gap:10px;
+    padding:8px 12px; border:1px solid #eee; border-radius:7px; background:#fff; cursor:pointer; }
+  .dep-item:hover { border-color:#d5d5d5; background:#fcfcfc; }
+  .dep-rank { color:#bbb; font-size:12px; text-align:center; }
+  .dep-gene { font-weight:600; }
+  .dep-desc { color:#999; font-size:12px; }
+  .dep-q { color:#999; font-size:12px; text-align:right; }
+  .empty { color:#999; font-size:13px; padding:14px; background:#fafafa; border-radius:8px; }
+
+  /* chips */
+  .chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+  .chip { font-size:12px; padding:4px 9px; border-radius:14px; background:#f1f3f5; color:#333; cursor:pointer; }
+  .chip:hover { background:#e3e8ee; }
+  .chip.up { background:#fdebd5; color:#9a5b00; }
+  .chip.down { background:#d9f0e4; color:#0a6b48; }
+
+  /* venn */
+  .venn-wrap { display:flex; gap:24px; flex-wrap:wrap; align-items:flex-start; }
+  .panel { background:#fff; border:1px solid #e0e0e0; border-radius:10px; padding:18px; }
+  .panel h4 { margin:0 0 12px; font-size:14px; }
+
+  /* pathways */
+  .pw-row { display:grid; grid-template-columns: 1fr; gap:4px; margin-bottom:10px; }
+  .pw-bar-wrap { display:flex; align-items:center; gap:10px; }
+  .pw-label { font-size:12.5px; color:#333; }
+  .pw-sub { font-size:11px; color:#999; }
+  .pw-bar { height:18px; border-radius:3px; background:#1565c0; min-width:2px; }
+
+  /* LR table */
+  table.lr { border-collapse:collapse; width:100%; font-size:13px; }
+  table.lr th { text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:#888;
+    border-bottom:1px solid #e0e0e0; padding:8px 10px; }
+  table.lr td { padding:8px 10px; border-bottom:1px solid #f2f2f2; }
+  .tag { font-size:11px; padding:2px 8px; border-radius:10px; }
+  .tag-shared { background:#e8f0fe; color:#1565c0; }
+  .tag-spec { background:#f3f0fa; color:#7a3da8; }
+  .chg { font-weight:700; }
+  .chg.up { color:#d97706; } .chg.down { color:#059669; } .chg.zero { color:#ccc; }
+  .arrow { color:#aaa; }
+
+  .note { font-size:12px; color:#8a6d3b; background:#fcf8e3; border:1px solid #faebcc; border-radius:8px; padding:10px 14px; margin-top:14px; }
+  footer { background:#fff; border-top:1px solid #e0e0e0; padding:26px 0; margin-top:0; }
+  footer .container { color:#999; font-size:12px; }
+
+  @media (max-width:768px) {
+    .dep-item { grid-template-columns:26px 90px 1fr 62px; }
+    .dep-desc { display:none; }
+    h1 { font-size: 22px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="container">
+    <h1>Neurovascular Molecular Signatures in Neurodegeneration</h1>
+    <p class="subtitle">A cross-disease single-cell atlas of the human brain neurovascular unit in Alzheimer's, Huntington's and frontotemporal dementia</p>
+    <div class="badges" id="badges"></div>
+    <div class="summary">
+      Interactive companion to a comparative single-cell / single-nucleus RNA-seq study of human brain
+      <b>vascular and perivascular cells</b> across three neurodegenerative diseases:
+      <b>Alzheimer's disease (AD)</b>, <b>Huntington's disease (HD)</b> and <b>GRN-related frontotemporal dementia (FTD-GRN)</b>.
+      Differential expression versus matched controls was computed per cell type with MAST.
+      A positive log<sub>2</sub> fold-change means <b>higher expression in disease</b> relative to control.
+      The headline finding is a shared neurovascular signature, concentrated in <b>pericytes and capillary endothelium</b>,
+      that converges across all three diseases despite their distinct primary pathologies.
+    </div>
+    <div class="stats" id="stats"></div>
+  </div>
+</header>
+
+<nav>
+  <div class="container" id="nav">
+    <a href="#atlas" class="active">Cell atlas</a>
+    <a href="#search">Gene search</a>
+    <a href="#deps">Cell-type DEGs</a>
+    <a href="#overlap">Cross-disease</a>
+    <a href="#pericytes">Pericytes</a>
+    <a href="#endo">Endothelium</a>
+    <a href="#pathways">Pathways</a>
+    <a href="#lr">Signaling</a>
+  </div>
+</nav>
+
+<!-- ATLAS -->
+<section id="atlas">
+  <div class="container">
+    <h2>Cell atlas</h2>
+    <p class="sec-desc">Harmonized single-nucleus UMAP of the brain neurovascular unit, downsampled to 5,000 nuclei per disease. Colour by cell type, or by condition to see control versus disease. Each disease has its own integrated embedding.</p>
+    <div class="controls">
+      <div class="ctl-group"><label>Disease</label><select id="atlas-disease"></select></div>
+      <div class="ctl-group"><label>Colour by</label>
+        <div class="seg" id="atlas-color">
+          <button data-by="lineage" class="active">Cell type</button>
+          <button data-by="condition">Condition</button>
+        </div>
+      </div>
+    </div>
+    <div class="venn-wrap">
+      <div class="panel" style="flex:0 0 auto"><canvas id="atlas-canvas" width="640" height="460" style="max-width:100%"></canvas></div>
+      <div class="panel" style="flex:1 1 200px"><h4 id="atlas-legend-title">Cell type</h4><div id="atlas-legend"></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- GENE SEARCH -->
+<section id="search">
+  <div class="container">
+    <h2>Gene search</h2>
+    <p class="sec-desc">Search any gene to see its disease-versus-control change in every cell type, side by side across the three diseases. Cells are coloured by log<sub>2</sub> fold-change; a dark outline marks significant change (FDR &le; 0.05).</p>
+    <div class="search-wrap">
+      <input type="text" id="geneInput" placeholder="Gene symbol, e.g. ADAMTS9, COL4A1, CLDN5" autocomplete="off">
+      <div class="ac" id="ac"></div>
+    </div>
+    <div class="hint">Try: <b>ADAMTS9</b>, <b>COL4A1</b>, <b>COL4A2</b>, <b>CLDN5</b>, <b>PDGFRB</b>, <b>VEGFC</b>, <b>APOE</b>, <b>SLC6A1</b>, <b>NAMPT</b>, <b>CNTNAP4</b></div>
+    <div class="result" id="result"></div>
+  </div>
+</section>
+
+<!-- CELL-TYPE DEGs -->
+<section id="deps">
+  <div class="container">
+    <h2>Cell-type DEGs</h2>
+    <p class="sec-desc">Top differentially expressed genes for a chosen disease and cell type, ranked by fold-change. Click a gene to open it in the search view.</p>
+    <div class="controls">
+      <div class="ctl-group"><label>Disease</label><select id="dep-disease"></select></div>
+      <div class="ctl-group"><label>Cell type</label><select id="dep-lineage"></select></div>
+      <div class="ctl-group"><label>Direction</label>
+        <div class="seg" id="dep-dir">
+          <button data-dir="up" class="active">Higher in disease</button>
+          <button data-dir="down">Lower in disease</button>
+        </div>
+      </div>
+    </div>
+    <div class="grid2" id="dep-list"></div>
+  </div>
+</section>
+
+<!-- CROSS-DISEASE -->
+<section id="overlap">
+  <div class="container">
+    <h2>Cross-disease convergence</h2>
+    <p class="sec-desc">Genes dysregulated in the same direction across AD, HD and FTD-GRN define a shared neurodegeneration signature. The Venn shows the overlap of significant DEGs (FDR &le; 0.05, |log<sub>2</sub>FC| &ge; 0.5) for the selected cell type; the lists below are concordant genes (same direction in all three diseases).</p>
+    <div class="controls">
+      <div class="ctl-group"><label>Cell type</label><select id="ov-lineage"></select></div>
+    </div>
+    <div class="venn-wrap">
+      <div class="panel" style="flex:0 0 auto">
+        <h4>DEG overlap across diseases</h4>
+        <div id="venn"></div>
+      </div>
+      <div class="panel" style="flex:1 1 320px">
+        <h4>Concordant shared genes (all three diseases)</h4>
+        <div id="shared-genes"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PERICYTES -->
+<section id="pericytes">
+  <div class="container">
+    <h2>Pericyte focus</h2>
+    <p class="sec-desc">Pericytes carry the strongest convergent signal. Matrix-associated pericytes (M-peri) are selectively depleted across all three diseases, shifting the balance toward transport-type pericytes (T-peri).</p>
+    <div class="venn-wrap">
+      <div class="panel" style="flex:1 1 360px">
+        <h4>M-pericyte proportion: control vs disease</h4>
+        <div style="height:240px"><canvas id="peri-prop"></canvas></div>
+        <p class="pw-sub" style="margin-top:8px">% of pericytes that are matrix-associated (M-peri). Values from the study.</p>
+      </div>
+      <div class="panel" style="flex:1 1 300px">
+        <h4>Convergent pericyte genes (AD &cap; HD &cap; FTD)</h4>
+        <div id="peri-overlap" class="pw-sub" style="margin-bottom:10px"></div>
+        <div id="peri-convergent" class="chips"></div>
+        <div style="margin-top:16px">
+          <div class="pw-sub" style="margin-bottom:4px"><b>M-peri markers</b> (matrix / ECM)</div>
+          <div id="peri-mk-m" class="chips"></div>
+          <div class="pw-sub" style="margin:10px 0 4px"><b>T-peri markers</b> (transport)</div>
+          <div id="peri-mk-t" class="chips"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ENDOTHELIUM -->
+<section id="endo">
+  <div class="container">
+    <h2>Endothelial zonation</h2>
+    <p class="sec-desc">Endothelial differential expression resolved by vascular segment (arterial, capillary, venous). Capillary endothelium shows the greatest cross-disease convergence.</p>
+    <div class="controls">
+      <div class="ctl-group"><label>Disease</label><select id="endo-disease"></select></div>
+      <div class="ctl-group"><label>Segment</label><select id="endo-seg"></select></div>
+      <div class="ctl-group"><label>Direction</label>
+        <div class="seg" id="endo-dir">
+          <button data-dir="up" class="active">Higher in disease</button>
+          <button data-dir="down">Lower in disease</button>
+        </div>
+      </div>
+    </div>
+    <div class="grid2" id="endo-list"></div>
+  </div>
+</section>
+
+<!-- PATHWAYS -->
+<section id="pathways">
+  <div class="container">
+    <h2>Pathway enrichment</h2>
+    <p class="sec-desc">Gene Ontology terms enriched among differentially expressed genes, by disease. Bars show fold-enrichment; hover for the adjusted p-value and gene count.</p>
+    <div class="controls">
+      <div class="ctl-group"><label>Disease</label><select id="pw-disease"></select></div>
+      <div class="ctl-group"><label>Scope</label><select id="pw-scope"></select></div>
+      <div class="ctl-group"><label>Ontology</label>
+        <div class="seg" id="pw-ont">
+          <button data-ont="BP" class="active">Biological process</button>
+          <button data-ont="CC">Cellular component</button>
+          <button data-ont="MF">Molecular function</button>
+        </div>
+      </div>
+    </div>
+    <div id="pw-list"></div>
+  </div>
+</section>
+
+<!-- SIGNALING -->
+<section id="lr">
+  <div class="container">
+    <h2>Pericyte&ndash;endothelial signaling</h2>
+    <p class="sec-desc">Ligand-receptor communication between pericytes and endothelial cells, and how it is remodelled in disease. Matrix and adhesion signalling (laminin, collagen, fibronectin) is broadly reduced; metabolic VISFATIN/NAMPT signalling is enhanced.</p>
+    <table class="lr">
+      <thead><tr><th>Pathway</th><th>Sender</th><th></th><th>Receiver</th><th>AD</th><th>HD</th><th>FTD</th><th>Type</th><th>Note</th></tr></thead>
+      <tbody id="lr-body"></tbody>
+    </table>
+    <div class="note" id="lr-note">Curated from the study's cell-cell communication (CellChat) analysis. Arrows show the direction of change in disease versus control. Raw interaction tables can be swapped in to make this section fully data-driven.</div>
+  </div>
+</section>
+
+<footer>
+  <div class="container" id="footer"></div>
+</footer>
+
+<script src="data.js"></script>
+<script src="umap.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
