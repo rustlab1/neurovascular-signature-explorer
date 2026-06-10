@@ -270,12 +270,14 @@ def read_overlap_counts(path):
     return d
 
 def build_pericyte():
-    convergent = read_gene_list(os.path.join(PERI_DIR, "DEGs/Common_Pericyte_DEGs_AD_DM_HD.csv"))
-    overlap = read_overlap_counts(os.path.join(PERI_DIR, "DEGs/Pericyte_DEG_overlap_counts.csv"))
-    # M-peri / T-peri subtype proportions (matrix vs transport pericytes), from the paper.
-    # Selective depletion of matrix-associated M-peri is the convergent finding.
+    # Core matrix-pericyte genes consistently regulated across all three diseases,
+    # as highlighted in the study (Fig. 3D), from the M-peri / T-peri split analysis.
+    # (Pooled pericyte DE -- what gene search shows -- can differ at the subtype level.)
+    core6 = ["COL4A2", "MIR4435-2HG", "OSMR", "PCBP3", "PDE10A", "TRPC4"]
+    # M-peri / T-peri subtype proportions (matrix vs transport pericytes), from the paper
+    # (Results: AD 26.7->6.7, FTD-GRN 25.9->9.8, HD 54.9->33.5 % M-peri, control -> disease).
     subtype = {
-        "AD":  {"M_ctrl": 27.0, "M_dis": 6.7},
+        "AD":  {"M_ctrl": 26.7, "M_dis": 6.7},
         "FTD": {"M_ctrl": 25.9, "M_dis": 9.8},
         "HD":  {"M_ctrl": 54.9, "M_dis": 33.5},
     }
@@ -283,40 +285,37 @@ def build_pericyte():
         "M": ["COL4A1", "COL4A2", "ADAMTS1", "ADAMTS9", "LAMA4"],
         "T": ["SLC6A1", "SLC6A13", "APOD", "SLC20A2"],
     }
-    return {
-        "convergent": convergent,
-        "overlap": overlap,
-        "subtype": subtype,
-        "markers": markers,
-    }
+    return {"core6": core6, "subtype": subtype, "markers": markers}
 
 # ----------------------------------------- ligand-receptor (curated from paper)
 # No CellChat interaction table is exported in the source data; these pairs are
 # curated from the paper's pericyte<->endothelial communication analysis.
 # change codes: 1 = enhanced/up in disease, -1 = reduced/down, 0 = not prominent.
 def build_lr():
-    pairs = [
-        # pathway, sender, receiver, {AD,HD,FTD}, shared, note
-        ("LAMININ",  "Pericyte",    "Endothelial", {"AD":-1,"HD":-1,"FTD":-1}, True,  "BBB basement membrane; reduced across all three diseases"),
-        ("COLLAGEN", "Pericyte",    "Endothelial", {"AD":-1,"HD":-1,"FTD":-1}, True,  "Matrix support from M-pericytes; broadly downregulated"),
-        ("FN1",      "Pericyte",    "Endothelial", {"AD":-1,"HD":-1,"FTD":-1}, True,  "Fibronectin matrix signaling; shared reduction"),
-        ("NCAM",     "Endothelial", "Pericyte",    {"AD":-1,"HD":-1,"FTD":-1}, True,  "Cell-adhesion signaling; reduced across diseases"),
-        ("NOTCH",    "Endothelial", "Pericyte",    {"AD":-1,"HD":0,"FTD":-1},  False, "Mural-cell maintenance; attenuated mainly in AD/FTD"),
-        ("VEGF",     "Pericyte",    "Endothelial", {"AD":-1,"HD":-1,"FTD":0},  False, "Angiogenic support; most reduced in HD"),
-        ("ANGPTL",   "Pericyte",    "Endothelial", {"AD":-1,"HD":0,"FTD":-1},  False, "Vascular stability; reduced in AD/FTD"),
-        ("JAM",      "Endothelial", "Endothelial", {"AD":-1,"HD":-1,"FTD":-1}, True,  "Junctional adhesion; barrier integrity"),
-        ("PECAM1",   "Endothelial", "Endothelial", {"AD":-1,"HD":0,"FTD":-1},  False, "Endothelial junctions; reduced in AD/FTD"),
-        ("BMP",      "Endothelial", "Pericyte",    {"AD":0,"HD":0,"FTD":-1},   False, "Trophic signaling; reduced in FTD-GRN"),
-        ("VISFATIN", "Pericyte",    "Endothelial", {"AD":1,"HD":1,"FTD":1},    True,  "NAMPT metabolic signaling; broadly enhanced"),
-        ("EPHB",     "Endothelial", "Pericyte",    {"AD":0,"HD":-1,"FTD":-1},  False, "Contact guidance; reduced in HD/FTD"),
-        ("NECTIN",   "Endothelial", "Pericyte",    {"AD":1,"HD":-1,"FTD":0},   False, "Adhesion; heterogeneous, attenuated in HD"),
-        ("NRG",      "Endothelial", "Pericyte",    {"AD":1,"HD":0,"FTD":0},    False, "Trophic; enhanced pericyte->endothelial routing in AD"),
+    # Curated from the study's CellChat pericyte<->endothelial analysis (Results + Fig. 4 /
+    # Supp. Fig. 4). The paper reports pathway-level remodeling and disease-weighting, NOT a
+    # simple per-disease up/down for every pathway, so we summarise the stated findings.
+    # pattern: all = consistently altered across all three; core = conserved core pathway
+    # (near centre of the contrast space); AD/HD/FTD = disease-weighted / disease-specific.
+    rows = [
+        ("LAMININ",        "ECM / basement membrane",    "all",  "Among the most consistently altered; weighted toward AD-specific remodeling"),
+        ("COLLAGEN",       "ECM",                        "all",  "Consistently altered; weighted toward HD; enriched in FTD-GRN after balancing"),
+        ("FN1",            "ECM (fibronectin)",          "all",  "Consistently altered; robust after cell-number balancing"),
+        ("NCAM",           "Adhesion",                   "all",  "Among the most consistently altered interactions"),
+        ("VISFATIN-NAMPT", "Metabolic (Endo → Peri)", "core", "Highlighted endothelial-to-pericyte metabolic axis"),
+        ("NOTCH",          "Contact / mural",            "core", "Core vascular pathway, broadly similar across diseases"),
+        ("ANGPTL",         "Vascular stability",         "core", "Conserved core pathway (near centre of contrast space)"),
+        ("JAM",            "Junction",                   "core", "Conserved core pathway"),
+        ("CD46",           "Trophic (Endo → Peri)", "core", "Conserved endothelial-to-pericyte pathway"),
+        ("NRG",            "Trophic (Endo → Peri)", "core", "Endothelial-to-pericyte trophic signaling"),
+        ("VEGF",           "Angiogenic",                 "HD",   "VEGF-associated signaling attenuated in HD"),
+        ("NECTIN",         "Adhesion",                   "HD",   "NECTIN-associated signaling attenuated in HD"),
+        ("BMP",            "Trophic (Endo → Peri)", "FTD",  "Preferentially reduced in FTD-GRN"),
+        ("EPHB",           "Contact",                    "FTD",  "Preferentially reduced in FTD-GRN"),
+        ("PECAM1",         "Junction",                   "FTD",  "Reduced in FTD-GRN; FTD-weighted in contrast space"),
+        ("PTPRM",          "Adhesion",                   "FTD",  "More strongly associated with FTD-GRN (balanced analysis)"),
     ]
-    out = []
-    for pw, snd, rcv, chg, shared, note in pairs:
-        out.append({"pathway": pw, "sender": snd, "receiver": rcv,
-                    "chg": chg, "shared": shared, "note": note})
-    return out
+    return [{"pathway": p, "cls": c, "pattern": pat, "note": n} for p, c, pat, n in rows]
 
 # ----------------------------------------------------------------------- assemble
 def main():
@@ -335,7 +334,7 @@ def main():
           " (AD/Pericyte/BP):", len(pathways.get("AD",{}).get("Pericyte",{}).get("BP",[])))
     print("Reading pericyte focus ...")
     peri = build_pericyte()
-    print("  convergent pericyte genes:", len(peri["convergent"]), "overlap:", peri["overlap"])
+    print("  core pericyte genes (Fig 3D):", peri["core6"])
     lr = build_lr()
 
     data = {
@@ -355,6 +354,9 @@ def main():
         "pathways": pathways,
         "pericyte": peri,
         "lr": lr,
+        # Pan-neurodegenerative core: 49 genes dysregulated across all eight cell types and
+        # all three diseases (study); the consistently up/down examples named in the paper.
+        "pan": {"up": ["CNTNAP4", "MOBP", "PI16"], "down": ["ADAMTS9", "DLGAP2", "SLCO4A1"], "n": 49},
     }
 
     os.makedirs(OUT, exist_ok=True)

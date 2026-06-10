@@ -368,6 +368,13 @@
     box.querySelectorAll(".chip").forEach(function (ch) { ch.onclick = function () { goGene(ch.dataset.g); }; });
   }
   function initOverlap() {
+    var pan = NV.pan;
+    if (pan) {
+      var up = pan.up.map(function (g) { return '<span class="chip up" data-g="' + g + '">' + g + '</span>'; }).join("");
+      var dn = pan.down.map(function (g) { return '<span class="chip down" data-g="' + g + '">' + g + '</span>'; }).join("");
+      $("pan-core").innerHTML = '<b>Pan-neurodegenerative core</b> — ' + pan.n + ' genes dysregulated across all cell types and all three diseases (study). Consistently higher: ' + up + ' &nbsp; lower: ' + dn;
+      $("pan-core").querySelectorAll(".chip").forEach(function (ch) { ch.onclick = function () { goGene(ch.dataset.g); }; });
+    }
     var sel = $("ov-lineage"); sel.innerHTML = "";
     // only lineages that have a concordant set, most-convergent first
     NV.common.forEach(function (cc) { if (cc.nUp + cc.nDown > 0) sel.appendChild(new Option(L[cc.lin].label + " (" + (cc.nUp + cc.nDown) + " shared)", cc.lin)); });
@@ -399,11 +406,9 @@
         scales: { y: { beginAtZero: true, max: 60, title: { display: true, text: "% M-pericytes" } } }
       }
     });
-    var o = p.overlap;
-    $("peri-overlap").innerHTML = "Pericyte DEGs per disease: <b>AD " + (o.AD || 0) + "</b> · <b>HD " + (o.HD || 0) +
-      "</b> · <b>FTD " + (o.FTD || 0) + "</b>. <b>" + (o["AD∩FTD∩HD"] || 0) + "</b> shared by all three.";
+    $("peri-overlap").innerHTML = "Consistently regulated across AD, HD and FTD-GRN in the matrix-pericyte (M-peri) analysis (study Fig. 3D). Gene search shows <i>pooled</i> pericyte values, which can differ at the subtype level.";
     function chipset(arr) { return arr.map(function (g) { return '<span class="chip" data-g="' + g + '">' + g + '</span>'; }).join(""); }
-    $("peri-convergent").innerHTML = chipset(p.convergent);
+    $("peri-convergent").innerHTML = chipset(p.core6);
     $("peri-mk-m").innerHTML = chipset(p.markers.M);
     $("peri-mk-t").innerHTML = chipset(p.markers.T);
     document.querySelectorAll("#pericytes .chip").forEach(function (ch) { ch.onclick = function () { goGene(ch.dataset.g); }; });
@@ -483,18 +488,20 @@
   // ===========================================================================
   // signaling (curated LR)
   // ===========================================================================
-  function chgCell(v) {
-    if (v > 0) return '<span class="chg up" title="enhanced in disease">▲</span>';
-    if (v < 0) return '<span class="chg down" title="reduced in disease">▼</span>';
-    return '<span class="chg zero" title="not prominently changed">–</span>';
-  }
   function initLR() {
     var body = $("lr-body");
+    var tg = {
+      all:  { t: "Altered in all 3", bg: "#e6f4ea", c: "#137333" },
+      core: { t: "Conserved core",   bg: "#eef1f4", c: "#566270" },
+      AD:   { t: "AD-weighted",      bg: "#fdebd5", c: "#9a5b00" },
+      HD:   { t: "HD",               bg: "#e3edfb", c: "#1c5fb0" },
+      FTD:  { t: "FTD-GRN",          bg: "#f3e8fb", c: "#7a3da8" }
+    };
     NV.lr.forEach(function (r) {
+      var s = tg[r.pattern] || tg.core;
       var tr = el("tr");
-      tr.innerHTML = '<td><b>' + r.pathway + '</b></td><td>' + r.sender + '</td><td class="arrow">→</td><td>' + r.receiver + '</td>' +
-        '<td>' + chgCell(r.chg.AD) + '</td><td>' + chgCell(r.chg.HD) + '</td><td>' + chgCell(r.chg.FTD) + '</td>' +
-        '<td><span class="tag ' + (r.shared ? 'tag-shared">shared' : 'tag-spec">disease-specific') + '</span></td>' +
+      tr.innerHTML = '<td><b>' + r.pathway + '</b></td><td class="pw-sub">' + r.cls + '</td>' +
+        '<td><span class="tag" style="background:' + s.bg + ';color:' + s.c + '">' + s.t + '</span></td>' +
         '<td class="pw-sub">' + r.note + '</td>';
       body.appendChild(tr);
     });

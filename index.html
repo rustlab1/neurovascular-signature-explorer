@@ -258,6 +258,7 @@
   <div class="container">
     <h2>Cross-disease convergence</h2>
     <p class="sec-desc">Genes dysregulated in the same direction across AD, HD and FTD-GRN define a shared neurodegeneration signature. The Venn shows the overlap of significant DEGs (FDR &le; 0.05, |log<sub>2</sub>FC| &ge; 0.5) for the selected cell type; the lists below are concordant genes (same direction in all three diseases).</p>
+    <div class="summary" id="pan-core" style="border-left-color:#9333ea;margin-bottom:18px"></div>
     <div class="controls">
       <div class="ctl-group"><label>Cell type</label><select id="ov-lineage"></select></div>
     </div>
@@ -286,7 +287,7 @@
         <p class="pw-sub" style="margin-top:8px">% of pericytes that are matrix-associated (M-peri). Values from the study.</p>
       </div>
       <div class="panel" style="flex:1 1 300px">
-        <h4>Convergent pericyte genes (AD &cap; HD &cap; FTD)</h4>
+        <h4>Core matrix-pericyte genes (study Fig. 3D)</h4>
         <div id="peri-overlap" class="pw-sub" style="margin-bottom:10px"></div>
         <div id="peri-convergent" class="chips"></div>
         <div style="margin-top:16px">
@@ -343,12 +344,12 @@
 <section id="lr">
   <div class="container">
     <h2>Pericyte&ndash;endothelial signaling</h2>
-    <p class="sec-desc">Ligand-receptor communication between pericytes and endothelial cells, and how it is remodelled in disease. Matrix and adhesion signalling (laminin, collagen, fibronectin) is broadly reduced; metabolic VISFATIN/NAMPT signalling is enhanced.</p>
+    <p class="sec-desc">Ligand-receptor communication between pericytes and endothelial cells (CellChat), and how it is remodelled in disease. Extracellular-matrix and adhesion pathways (laminin, collagen, fibronectin, NCAM) are the most consistently altered across all three diseases; other changes are disease-weighted.</p>
     <table class="lr">
-      <thead><tr><th>Pathway</th><th>Sender</th><th></th><th>Receiver</th><th>AD</th><th>HD</th><th>FTD</th><th>Type</th><th>Note</th></tr></thead>
+      <thead><tr><th>Pathway</th><th>Class</th><th>Cross-disease pattern</th><th>Notes</th></tr></thead>
       <tbody id="lr-body"></tbody>
     </table>
-    <div class="note" id="lr-note">Curated from the study's cell-cell communication (CellChat) analysis. Arrows show the direction of change in disease versus control. Raw interaction tables can be swapped in to make this section fully data-driven.</div>
+    <div class="note" id="lr-note">Curated from the study's CellChat analysis (Fig. 4, Supp. Fig. 4). The study reports pathway-level remodeling and disease-weighting rather than a simple per-disease up/down for every pathway. Raw interaction tables can be added to make this section fully data-driven.</div>
   </div>
 </section>
 
