@@ -8,9 +8,6 @@ The explorer shows disease-versus-control differential expression per cell type,
 cross-disease signature, the pericyte and endothelial focus of the study, GO pathway
 enrichment, and pericyte-endothelial signalling.
 
-Built in the same style as [bbb-proteome-explorer](https://github.com/rustlab1/bbb-proteome-explorer):
-a single static page, vanilla JavaScript, Chart.js from CDN, no build step.
-
 ## Sections
 
 - **Cell atlas** - harmonized single-nucleus UMAP, downsampled per disease, coloured by cell type or condition.
