@@ -66,3 +66,7 @@ Rscript build_expr.R      # needs Seurat
 
 Static site. The included GitHub Actions workflow publishes the repository root to GitHub Pages
 on push to `main`.
+
+A client-side landing page gates the explorer behind an access password. This is a cosmetic
+deterrent only: the static data files remain fetchable by URL, so it is not a substitute for
+real access control on unpublished data.
