@@ -61,6 +61,12 @@ thresholds, downsampling and the binary format of `expr/`.
 - UMAPs show downsampled nuclei (atlas ~6,000 per dataset; endothelial cells and pericytes up to
   ~4,000 per dataset); means and % expressing are computed on all nuclei.
 
+## Contributors
+
+- Patrycja Forster ([@pmforster](https://github.com/pmforster)): analysis code, data pipeline and explorer rebuild
+  (script-generated tables, gene-expression UMAPs)
+- Ruslan Rust ([@rustlab1](https://github.com/rustlab1)): original explorer
+
 ## Deployment
 
 Static site. The included GitHub Actions workflow publishes the repository root to GitHub Pages
